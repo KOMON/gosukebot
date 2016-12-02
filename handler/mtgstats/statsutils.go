@@ -27,6 +27,14 @@ func joinAndWhere(search sq.SelectBuilder, query Query) sq.SelectBuilder {
 			search = search.Join("card_supertype on cards.id=card_supertype.id")
 		case "types", "type":
 			search = search.Join("card_type on cards.id=card_type.id")
+			if len(eq) != 0 {
+				search = search.Where(sq.Eq{"card_type.type": eq})
+			}
+			if len(not) != 0 {
+				search = search.Where(sq.NotEq{"card_type.type": not})
+			}
+			continue
+
 		case "subtypes", "subtype":
 			search = search.Join("card_subtype on cards.id=card_subtype.id")
 		case "sets", "set", "set_codes", "set_code":
