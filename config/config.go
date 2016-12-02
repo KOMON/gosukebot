@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/BurntSushi/toml"
@@ -13,7 +12,7 @@ type responder struct {
 }
 
 type responders struct {
-	Rs []responder
+	Rs []responder `toml:"responders"`
 }
 
 // PopulateResponders reads the toml file "responders.toml" and returns
@@ -23,6 +22,5 @@ func PopulateResponders() []responder {
 	if _, err := toml.DecodeFile("responders.toml", &rs); err != nil {
 		log.Fatalf("Error reading responders file: %v", err)
 	}
-	fmt.Println(rs)
 	return rs.Rs
 }
