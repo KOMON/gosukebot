@@ -1,0 +1,23 @@
+[[responders]]
+regexp = '''^hello,*[\t ]*jojo(?:bot)?[.!?]*'''
+responses = [ "Hello to you too" ]
+
+[[responders]]
+regexp = '''(?:oh my god)|(?:omg)|(?:holy shit)'''
+responses = ["OH MAI GAADUU!", "OHH GAADU!", "OHHH SHIITU!", "SON OF A BIITCHU!"]
+
+[[responders]]
+regexp = 'menacing'
+responses = ["```ゴ        ゴ              ゴ\n    ゴ      ゴ \n      ゴ            \n    ゴ   ゴ \n     ゴ      ゴ    ゴ         ゴ ゴ```"]
+
+[[responders]]
+regexp = '''(?: how troublesome)|(?:oh dear)|(?:oh bother)|(?:good grief)|(?:jeeze)'''
+responses = ["やれやれだぜ..."]
+
+[[responders]]
+regexp = '''(?:eh,*[\t ]*jojo(bot)?\?)|(?:isn't[\t ]+that[\t ]+right,*[\t ]*jojo(bot)?\?)'''
+responses = ["Yeah!", "Sure", "...", "Nah", "Not really"]
+
+[[responders]]
+regexp = '''^jojo[\t ]*help[\t ]*verbs'''
+responses = ["```verbs available: avg, count, sum, min, max```"]
