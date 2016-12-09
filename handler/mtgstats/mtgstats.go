@@ -58,6 +58,9 @@ func (msh MtgStatsHandler) Respond() (string, error) {
 				query[k] = v
 			}
 		}
+		if len(verbs) == 0 {
+			verbs["count"] = []string{"id"}
+		}
 		response += runSearch(query, verbs)
 	}
 

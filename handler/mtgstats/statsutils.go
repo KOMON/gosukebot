@@ -1,7 +1,9 @@
 package mtgstats
 
 import (
+	"bytes"
 	"fmt"
+	"strings"
 	"unicode"
 
 	sq "github.com/Masterminds/squirrel"
@@ -24,26 +26,23 @@ func joinAndWhere(search sq.SelectBuilder, query Query) sq.SelectBuilder {
 				Where(colorQuery(eq, true))
 			continue
 		case "supertypes", "supertype":
-			search = search.Join("card_supertype on cards.id=card_supertype.id")
+			fallthrough
 		case "types", "type":
-			search = search.Join("card_type on cards.id=card_type.id")
-			if len(eq) != 0 {
-				search = search.Where(sq.Eq{"card_type.type": eq})
-			}
-			if len(not) != 0 {
-				search = search.Where(sq.NotEq{"card_type.type": not})
-			}
-			continue
-
+			fallthrough
 		case "subtypes", "subtype":
-			search = search.Join("card_subtype on cards.id=card_subtype.id")
+			for _, term := range eq {
+				search = search.Where("type like '%" + strings.Title(term) + "%'")
+			}
+			for _, term := range not {
+				search = search.Where("type not like '%" + strings.Title(term) + "%'")
+			}
 		case "sets", "set", "set_codes", "set_code":
 			search = search.Join("set_card on cards.id=set_card.id")
 			if len(eq) != 0 {
-				search = search.Where(sq.Eq{"set_code": eq})
+				search = search.Where(sq.Eq{"set_code": strMap(eq, strings.ToUpper)})
 			}
 			if len(not) != 0 {
-				search = search.Where(sq.NotEq{"set_code": not})
+				search = search.Where(sq.NotEq{"set_code": strMap(not, strings.ToUpper)})
 			}
 			continue
 		default:
@@ -51,10 +50,10 @@ func joinAndWhere(search sq.SelectBuilder, query Query) sq.SelectBuilder {
 		}
 
 		if len(eq) != 0 {
-			search = search.Where(sq.Eq{k: eq})
+			search = search.Where(sq.Eq{k: strMap(eq, strings.Title)})
 		}
 		if len(not) != 0 {
-			search = search.Where(sq.NotEq{k: not})
+			search = search.Where(sq.NotEq{k: strMap(not, strings.Title)})
 		}
 	}
 	return search
@@ -113,7 +112,6 @@ func min(search sq.SelectBuilder, arg string) string {
 	if err != nil {
 		return err.Error() + "\n"
 	}
-	fmt.Println(search.ToSql())
 	return fmt.Sprintf("Minimum %s: %s %s\n", arg, name, imageFromMID(id))
 }
 
@@ -215,4 +213,46 @@ func splitNegatives(ss []string) ([]string, []string) {
 		})
 	}
 	return matches, non
+}
+
+func debugSqlizer(s sq.Sqlizer) string {
+	sql, args, err := s.ToSql()
+	if err != nil {
+		return fmt.Sprintf("[ToSql error: %s]", err)
+	}
+
+	// TODO: dedupe this with placeholder.go
+	buf := &bytes.Buffer{}
+	i := 0
+	for {
+		p := strings.Index(sql, "?")
+		if p == -1 {
+			break
+		}
+		if len(sql[p:]) > 1 && sql[p:p+2] == "??" { // escape ?? => ?
+			buf.WriteString(sql[:p])
+			buf.WriteString("?")
+			if len(sql[p:]) == 1 {
+				break
+			}
+			sql = sql[p+2:]
+		} else {
+			if i+1 > len(args) {
+				return fmt.Sprintf(
+					"[DebugSqlizer error: too many placeholders in %#v for %d args]",
+					sql, len(args))
+			}
+			buf.WriteString(sql[:p])
+			fmt.Fprintf(buf, "'%v'", args[i])
+			sql = sql[p+1:]
+			i++
+		}
+	}
+	if i < len(args) {
+		return fmt.Sprintf(
+			"[DebugSqlizer error: not enough placeholders in %#v for %d args]",
+			sql, len(args))
+	}
+	buf.WriteString(sql)
+	return buf.String()
 }
