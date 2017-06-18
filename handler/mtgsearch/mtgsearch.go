@@ -92,10 +92,10 @@ func (msh MtgSearchHandler) Respond() (string, error) {
 		}
 		if multi {
 			response += fmt.Sprintf("%s %s ```%s``` %s\n", res.name,
-				formatCost(res.cost), res.text, res.set)
+				res.cost, res.text, res.set)
 		} else {
 			response += fmt.Sprintf("%s %s ```%s``` %s", formatImageURL(res.id),
-				formatCost(res.cost), res.text, res.set)
+				res.cost, res.text, res.set)
 		}
 	}
 	return response, nil
@@ -171,24 +171,4 @@ func runSearch(name string, set string) (mtgSearchResult, error) {
 
 func formatImageURL(multiverseID int) string {
 	return fmt.Sprintf("http://gatherer.wizards.com/Handlers/Image.ashx?multiverseid=%d&type=card", multiverseID)
-}
-
-func formatCost(cost string) string {
-	fixSymbols := strings.NewReplacer(
-		"{W}", ":ww:", "{U}", ":uu:", "{B}", ":bb:",
-		"{R}", ":rr:", "{G}", ":gg:", "{1}", ":1:",
-		"{2}", ":2:", "{3}", ":3:", "{4}", ":4:",
-		"{5}", ":5:", "{6}", ":6:", "{7}", ":7:",
-		"{8}", ":8:", "{9}", ":9:", "{10}", ":10:",
-		"{11}", ":11:", "{12}", ":12:", "{13}", ":13:",
-		"{14}", ":14:", "{15}", ":15:", "{20}", ":20:",
-		"{X}", ":xx:", "{2w}", ":2w:", "{2u}", ":2u:",
-		"{2b}", ":2b:", "{2r}", ":2r:", "{2g}", ":2g:",
-		"{W/P}", ":wp:", "{U/P}", ":up:", "{B/P}", ":bp:",
-		"{R/P}", ":rp:", "{G/P}", ":gp:", "{W/U}", ":wu:",
-		"{W/B}", ":wb:", "{U/B}", ":ub:", "{U/R}", ":ur:",
-		"{B/R}", ":br:", "{B/G}", ":bg:", "{R/G}", ":rg:",
-		"{R/W}", ":rw:", "{G/W}", ":gw:", "{G/U}", ":gu:",
-	)
-	return fixSymbols.Replace(cost)
 }

@@ -78,7 +78,7 @@ func runSearch(query Query, verbs Query) string {
 			case "avg":
 				response += avg(search, arg)
 			case "count":
-				response += count(search)
+				response += count(search, arg)
 			case "sum":
 				response += sum(search, arg)
 			case "min":

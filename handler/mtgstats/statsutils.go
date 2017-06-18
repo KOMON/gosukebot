@@ -14,21 +14,23 @@ func joinAndWhere(search sq.SelectBuilder, query Query) sq.SelectBuilder {
 		eq, not := splitNegatives(v)
 		switch k {
 		case "verb", "verbs":
-			continue
 		case "names", "name":
-			break
+			if len(eq) != 0 {
+				search = search.Where(sq.Eq{"name": strMap(eq, strings.Title)})
+			}
+			if len(not) != 0 {
+				search = search.Where(sq.NotEq{"name": strMap(not, strings.Title)})
+			}
 		case "colors", "color":
 			search = search.Join("card_color on cards.id=card_color.id").
 				Where(colorQuery(eq, false))
-			continue
 		case "colorIDs", "colorID":
 			search = search.Join("card_colorID on cards.id=card_colorID.id").
 				Where(colorQuery(eq, true))
-			continue
 		case "supertypes", "supertype":
-			fallthrough
+			search = filterSupertype(search, v)
 		case "types", "type":
-			fallthrough
+			search = filterType(search, v)
 		case "subtypes", "subtype":
 			for _, term := range eq {
 				search = search.Where("type like '%" + strings.Title(term) + "%'")
@@ -44,17 +46,117 @@ func joinAndWhere(search sq.SelectBuilder, query Query) sq.SelectBuilder {
 			if len(not) != 0 {
 				search = search.Where(sq.NotEq{"set_code": strMap(not, strings.ToUpper)})
 			}
-			continue
+		case "rarities", "rarity", "rareness":
+			search = filterRarity(search, v)
 		default:
-			break
 		}
+	}
+	return search
+}
 
-		if len(eq) != 0 {
-			search = search.Where(sq.Eq{k: strMap(eq, strings.Title)})
+func filterSupertype(search sq.SelectBuilder, ts []string) sq.SelectBuilder {
+	eq, not := splitNegatives(ts)
+	viewFilter := func(s string, eq bool) {
+		view := ""
+		switch strings.Title(s) {
+		case "Legendary", "Legendaries", "Legend", "Legends":
+			view = "legendaries"
+		case "Basic", "Basics", "Basic Land", "Basic Lands":
+			view = "basics"
+		case "Ongoing", "Ongoings":
+			view = "ongoings"
+		case "Snow", "Snows":
+			view = "snows"
+		case "World", "Worlds":
+			view = "worlds"
+		default:
+			return
 		}
-		if len(not) != 0 {
-			search = search.Where(sq.NotEq{k: strMap(not, strings.Title)})
+		if eq {
+			search = search.Where("id in " + view)
+		} else {
+			search = search.Where("id not in " + view)
 		}
+	}
+	for _, e := range eq {
+		viewFilter(e, true)
+	}
+	for _, n := range not {
+		viewFilter(n, false)
+	}
+	return search
+}
+
+func filterType(search sq.SelectBuilder, ts []string) sq.SelectBuilder {
+	eq, not := splitNegatives(ts)
+	viewFilter := func(s string, eq bool) {
+		view := ""
+		switch strings.Title(s) {
+		case "Creature", "Creatures":
+			view = "creatures"
+		case "Artifact", "Artifacts":
+			view = "artifacts"
+		case "Enchantment", "Echantments":
+			view = "enchantments"
+		case "Land", "Lands":
+			view = "lands"
+		case "Planeswalker", "Planeswalkers":
+			view = "planeswalkers"
+		case "Instant", "Instants":
+			view = "instants"
+		case "Sorcery", "Sorceries":
+			view = "sorceries"
+		case "Tribal", "Tribals":
+			view = "tribals"
+		default:
+			return
+		}
+		if eq {
+			search = search.Where("id in " + view)
+		} else {
+			search = search.Where("id not in " + view)
+		}
+	}
+
+	for _, e := range eq {
+		viewFilter(e, true)
+	}
+
+	for _, n := range not {
+		viewFilter(n, false)
+	}
+	return search
+}
+
+func filterRarity(search sq.SelectBuilder, rs []string) sq.SelectBuilder {
+	eq, not := splitNegatives(rs)
+	viewFilter := func(s string, eq bool) {
+		view := ""
+		switch strings.Title(s) {
+		case "Common", "Commons", "C":
+			view = "commons"
+		case "Uncommon", "Uncommons", "U":
+			view = "uncommons"
+		case "Rare", "Rares", "R":
+			view = "rares"
+		case "Mythic", "Mythics", "Mythic Rare", "Mythic Rares", "MR":
+			view = "mythics"
+		case "Special", "Specials", "S":
+			view = "specials"
+		default:
+			return
+		}
+		if eq {
+			search = search.Where("id in " + view)
+		} else {
+			search = search.Where("id not in " + view)
+		}
+	}
+	for _, e := range eq {
+		viewFilter(e, true)
+	}
+	for _, n := range not {
+		viewFilter(n, false)
 	}
 	return search
 }
@@ -72,9 +174,9 @@ func avg(search sq.SelectBuilder, arg string) string {
 	return fmt.Sprintf("Average %s: %f\n", arg, res)
 }
 
-func count(search sq.SelectBuilder) string {
+func count(search sq.SelectBuilder, arg string) string {
 	var res int
-	err := queryOnSubSelect(sq.Select("count(id)"), search).
+	err := queryOnSubSelect(sq.Select("count("+arg+")"), search).
 		QueryRow().
 		Scan(&res)
 
