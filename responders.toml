@@ -2,9 +2,6 @@
 regexp = '''^hello,*[\t ]*jojo(?:bot)?[.!?]*'''
 responses = [ "Hello to you too" ]
 
-[[responders]]
-regexp = '''(?:oh my god)|(?:omg)|(?:holy shit)'''
-responses = ["OH MAI GAADUU!", "OHH GAADU!", "OHHH SHIITU!", "SON OF A BIITCHU!"]
 
 [[responders]]
 regexp = 'menacing'
